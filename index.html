@@ -1,0 +1,308 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family: var(--font-sans); 
+  font-size: 16px; /* 設定網頁整體的預設字體大小 */
+}
+.wrap{
+  padding: 1rem 15px; 
+  max-width: 1000px; 
+  margin: 0 auto; 
+  font-size: 15px; /* 提升基礎內文字體 */
+}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.2rem}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:11px 13px}
+.metric-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:3px}
+.metric-value{font-size:19px;font-weight:500;color:var(--color-text-primary)}
+.metric-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.slider-wrap{margin-bottom:1.2rem}
+.slider-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.slider-row label{font-size:13px;color:var(--color-text-secondary);white-space:nowrap}
+.slider-val{font-size:16px;font-weight:500;min-width:48px;color:var(--color-text-primary)}
+.tick-row{display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-tertiary);padding:0 2px;position:relative}
+.opt-banner{background:#EAF3DE;border:1.5px solid #97C459;border-radius:var(--border-radius-md);padding:9px 14px;display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;font-size:13px;color:#27500A}
+.opt-banner i{font-size:18px;color:#3B6D11;flex-shrink:0}
+.opt-banner strong{font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+thead th{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-align:left;padding:5px 7px;border-bottom:0.5px solid var(--color-border-tertiary);white-space:nowrap}
+tbody tr{border-bottom:0.5px solid var(--color-border-tertiary)}
+tbody tr.active-row{background:var(--color-background-secondary)}
+tbody tr.done-row td{color:var(--color-text-tertiary)}
+td{padding:7px 7px;vertical-align:middle;color:var(--color-text-primary)}
+.badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;font-weight:500;white-space:nowrap}
+.badge-done{background:#EAF3DE;color:#3B6D11}
+.badge-active{background:#E6F1FB;color:#185FA5}
+.badge-idle{background:#F1EFE8;color:#5F5E5A}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.9rem 1.1rem;margin-top:1rem}
+.card-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.sum-row{display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12.5px;gap:8px}
+.sum-row:last-child{border-bottom:none}
+.sum-total{display:flex;justify-content:space-between;align-items:center;padding:8px 0 2px;font-size:13.5px;font-weight:500;border-top:0.5px solid var(--color-border-secondary);margin-top:3px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:1rem}
+.red{color:#A32D2D;font-weight:500}
+.green{color:#3B6D11;font-weight:500}
+.net-highlight{border-radius:var(--border-radius-lg);padding:.9rem 1.1rem;margin-top:1rem;display:flex;justify-content:space-between;align-items:center}
+.note{font-size:11.5px;color:var(--color-text-tertiary);margin-top:10px;line-height:1.6}
+.hday-pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:3px 9px;border-radius:999px;margin:3px 3px 3px 0;font-weight:500}
+.hday-remain{background:#FCEBEB;color:#791F1F}
+.hday-gone{background:#EAF3DE;color:#27500A;text-decoration:none}
+.hday-gone-wrap{text-decoration:line-through;color:#888}
+</style>
+
+<div class="wrap">
+<h2 class="sr-only">趕工淨節省最佳化工具（含國定假日與週末因素）</h2>
+
+<div class="metrics">
+  <div class="metric">
+    <div class="metric-label">原始工期</div>
+    <div class="metric-value">138 日曆天</div>
+    <div class="metric-sub">6/1～10/16，含 38 週末＋3 假日</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">目標完工日</div>
+    <div class="metric-value" id="m-end">2026/10/16</div>
+    <div class="metric-sub" id="m-end-sub">尚未壓縮</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">節省日曆天</div>
+    <div class="metric-value" id="m-caldays" style="color:#185FA5">0 天</div>
+    <div class="metric-sub" id="m-caldays-sub">工作日 0 ＋ 週末 0</div>
+  </div>
+</div>
+
+<div class="slider-wrap">
+  <div class="slider-row">
+    <label>壓縮工作日數</label>
+    <input type="range" min="0" max="28" value="0" step="1" id="slider" style="flex:1">
+    <span class="slider-val" id="slider-out">0 天</span>
+  </div>
+  <div class="tick-row" id="tick-row"></div>
+</div>
+
+<div id="opt-banner"></div>
+
+<div style="overflow-x:auto;margin-bottom:1rem">
+<table>
+<thead>
+<tr>
+  <th style="width:32px">#</th>
+  <th style="width:56px">組合</th>
+  <th>說明</th>
+  <th style="width:52px;text-align:center">可用</th>
+  <th style="width:52px;text-align:center">使用</th>
+  <th style="width:96px;text-align:right">趕工費/天</th>
+  <th style="width:86px;text-align:right">小計</th>
+  <th style="width:58px;text-align:center">狀態</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+<div class="two-col">
+  <div class="card" id="cost-card">
+    <div class="card-title">成本試算</div>
+    <div id="cost-section"><div style="color:var(--color-text-tertiary);font-size:12.5px">拖動滑桿以開始計算</div></div>
+  </div>
+  <div class="card" id="saving-card">
+    <div class="card-title">間接成本節省</div>
+    <div id="saving-section"><div style="color:var(--color-text-tertiary);font-size:12.5px">拖動滑桿以開始計算</div></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1rem">
+  <div class="card-title">國定假日影響</div>
+  <div id="holiday-section"><div style="color:var(--color-text-tertiary);font-size:12.5px">拖動滑桿以開始計算</div></div>
+</div>
+
+<div id="net-section"></div>
+
+<p class="note">* 間接成本 NT$150,000／日曆天（含週末）。壓縮工作日後尾端週末自動消除，實際節省日曆天 ＞ 壓縮工作日數。最佳點（Optimum）為淨節省最大的壓縮量，以綠色標示。F 剩餘 3 天額度因 C＋D 耗盡而無效，最大有效壓縮 28 天。國定假日：端午（6/19 週五，為平日）、中秋（9/26 週六）、國慶（10/10 週六），後兩者本身為週末故不額外增加間接成本節省。</p>
+</div>
+
+<script>
+const STEPS=[
+  {order:1,combo:'A',  label:'單壓 A（最便宜）',           maxDays:3, cpd:150000},
+  {order:2,combo:'B',  label:'單壓 B',                     maxDays:5, cpd:150000},
+  {order:3,combo:'I',  label:'單壓 I',                     maxDays:6, cpd:187500},
+  {order:4,combo:'H',  label:'單壓 H',                     maxDays:5, cpd:200000},
+  {order:5,combo:'C+F',label:'C＋F 同步（C 限 3 天）',    maxDays:3, cpd:231250},
+  {order:6,combo:'D+F',label:'D＋F 同步（接續 C）',       maxDays:6, cpd:293750},
+];
+const INDIRECT=150000;
+const ORIG_CAL=138;
+const START=new Date(2026,5,1);
+const ORIG_END=new Date(2026,9,16);
+
+const HOLIDAYS=[
+  {date:new Date(2026,5,19), name:'端午節', isWeekend:false},
+  {date:new Date(2026,8,26), name:'中秋節', isWeekend:true},
+  {date:new Date(2026,9,10), name:'國慶日', isWeekend:true},
+];
+
+function addWorkdaysBack(n){
+  if(n===0) return new Date(ORIG_END);
+  let d=new Date(ORIG_END); d.setDate(d.getDate()-1);
+  let rem=0;
+  while(rem<n){
+    if(d.getDay()!==0&&d.getDay()!==6) rem++;
+    if(rem<n) d.setDate(d.getDate()-1);
+  }
+  return d;
+}
+
+function calInfo(ne){
+  const ms=Math.round((ne-START)/(86400000))+1;
+  let wk=0;
+  for(let i=0;i<ms;i++){
+    const d=new Date(START); d.setDate(d.getDate()+i);
+    if(d.getDay()===0||d.getDay()===6) wk++;
+  }
+  return {cal:ms,weekends:wk};
+}
+
+function crashCost(reduce){
+  let rem=reduce,total=0,used=[];
+  STEPS.forEach(s=>{const u=Math.min(rem,s.maxDays);total+=u*s.cpd;rem-=u;used.push(u);});
+  return {total,used};
+}
+
+function netSaving(reduce){
+  const ne=addWorkdaysBack(reduce);
+  const {cal,weekends}=calInfo(ne);
+  const savedCal=ORIG_CAL-cal;
+  const {total:crash,used}=crashCost(reduce);
+  return {net:savedCal*INDIRECT-crash, savedCal, weekends, cal, ne, crash, used};
+}
+
+// find optimum
+let bestNet=-Infinity, bestReduce=0;
+for(let r=0;r<=28;r++){const {net}=netSaving(r);if(net>bestNet){bestNet=net;bestReduce=r;}}
+
+function fmtDate(d){return `${d.getFullYear()}/${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}`}
+function fmtNT(n){return 'NT$'+Math.round(Math.abs(n)).toLocaleString()}
+
+// build tick row
+const tickRow=document.getElementById('tick-row');
+[0,5,10,15,20,bestReduce,28].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b).forEach(v=>{
+  const pct=(v/28)*100;
+  const span=document.createElement('span');
+  span.style.cssText=`position:absolute;left:${pct}%;transform:translateX(-50%);white-space:nowrap`;
+  span.textContent= v===bestReduce ? `▲${v}天` : `${v}`;
+  if(v===bestReduce) span.style.color='#3B6D11';
+  tickRow.appendChild(span);
+});
+tickRow.style.position='relative';tickRow.style.height='16px';
+
+function render(){
+  const reduce=parseInt(document.getElementById('slider').value);
+  document.getElementById('slider-out').textContent=reduce+' 天';
+
+  const {net,savedCal,weekends,cal,ne,crash,used}=netSaving(reduce);
+  const savedWk=(138-38)-(cal-weekends)===100-100?ORIG_CAL-38-cal+weekends:38-weekends;
+  const origWk=38; const newWk=weekends;
+  const swk=origWk-newWk;
+
+  document.getElementById('m-end').textContent=fmtDate(ne);
+  document.getElementById('m-end-sub').textContent=reduce>0?`提早完工 ${savedCal} 日曆天`:'尚未壓縮';
+  document.getElementById('m-caldays').textContent=savedCal+' 天';
+  document.getElementById('m-caldays-sub').textContent=`工作日 ${reduce} ＋ 週末 ${swk}`;
+
+  // optimum banner
+  const banner=document.getElementById('opt-banner');
+  if(reduce===bestReduce&&reduce>0){
+    banner.innerHTML=`<div class="opt-banner"><i class="ti ti-star" aria-hidden="true"></i><span>目前為<strong>最佳壓縮點（Optimum）</strong>：壓縮 ${bestReduce} 工作日，淨節省最大 ${fmtNT(bestNet)}，完工日 ${fmtDate(ne)}</span></div>`;
+  } else if(reduce<bestReduce&&reduce>0){
+    banner.innerHTML=`<div class="opt-banner" style="background:#E6F1FB;border-color:#85B7EB;color:#0C447C"><i class="ti ti-arrow-right" aria-hidden="true"></i><span>最佳壓縮點為 <strong>${bestReduce} 天</strong>，再壓 ${bestReduce-reduce} 天可達最大淨節省 ${fmtNT(bestNet)}</span></div>`;
+  } else if(reduce>bestReduce){
+    banner.innerHTML=`<div class="opt-banner" style="background:#FAEEDA;border-color:#FAC775;color:#854F0B"><i class="ti ti-alert-triangle" aria-hidden="true"></i><span>已超過最佳壓縮點（${bestReduce} 天），趕工成本增加速度超過間接節省，淨效益遞減${reduce===28?' ── 28 天時淨節省已為負值':''}</span></div>`;
+  } else {
+    banner.innerHTML=`<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 14px;font-size:12.5px;color:var(--color-text-secondary);margin-bottom:1.2rem"><i class="ti ti-info-circle" style="font-size:15px;vertical-align:-2px;margin-right:6px" aria-hidden="true"></i>最佳壓縮點為 <strong style="color:var(--color-text-primary)">${bestReduce} 工作日</strong>，拖動滑桿至該點可見最大淨節省 ${fmtNT(bestNet)}</div>`;
+  }
+
+  // activity table
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='';
+  STEPS.forEach((s,i)=>{
+    const u=used[i];
+    let status='',rc='';
+    if(u===0){status=`<span class="badge badge-idle">未啟用</span>`}
+    else if(u===s.maxDays){status=`<span class="badge badge-done">用完</span>`;rc='done-row'}
+    else{status=`<span class="badge badge-active">使用中</span>`;rc='active-row'}
+    const tr=document.createElement('tr');
+    if(rc)tr.className=rc;
+    tr.innerHTML=`<td style="text-align:center;font-weight:500">${s.order}</td>
+      <td style="font-weight:500">${s.combo}</td><td>${s.label}</td>
+      <td style="text-align:center">${s.maxDays}天</td>
+      <td style="text-align:center;font-weight:500;color:${u>0?'#185FA5':'var(--color-text-tertiary)'}">${u>0?u+'天':'—'}</td>
+      <td style="text-align:right">${fmtNT(s.cpd)}</td>
+      <td style="text-align:right;font-weight:500;color:${u>0?'#A32D2D':'var(--color-text-tertiary)'}">${u>0?fmtNT(u*s.cpd):'—'}</td>
+      <td style="text-align:center">${status}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  if(reduce===0){
+    document.getElementById('cost-section').innerHTML='<div style="color:var(--color-text-tertiary);font-size:12.5px">拖動滑桿以開始計算</div>';
+    document.getElementById('saving-section').innerHTML='<div style="color:var(--color-text-tertiary);font-size:12.5px">拖動滑桿以開始計算</div>';
+    document.getElementById('holiday-section').innerHTML='<div style="color:var(--color-text-tertiary);font-size:12.5px">拖動滑桿以開始計算</div>';
+    document.getElementById('net-section').innerHTML='';
+    return;
+  }
+
+  // cost card
+  let chtml='';
+  STEPS.forEach((s,i)=>{const u=used[i];if(u===0)return;
+    chtml+=`<div class="sum-row"><span>${s.combo}：${u}天×${fmtNT(s.cpd)}/天</span><span class="red">${fmtNT(u*s.cpd)}</span></div>`;});
+  chtml+=`<div class="sum-total"><span>趕工總支出</span><span class="red">${fmtNT(crash)}</span></div>`;
+  document.getElementById('cost-section').innerHTML=chtml;
+
+  // saving card
+  const indirectSave=savedCal*INDIRECT;
+  let shtml=`<div class="sum-row"><span>工作日（${reduce}天×NT$150,000）</span><span class="green">${fmtNT(reduce*INDIRECT)}</span></div>`;
+  shtml+=`<div class="sum-row"><span>消除週末（${swk}天×NT$150,000）</span><span class="green">${fmtNT(swk*INDIRECT)}</span></div>`;
+  shtml+=`<div class="sum-total"><span>間接節省合計（${savedCal}日曆天）</span><span class="green">${fmtNT(indirectSave)}</span></div>`;
+  document.getElementById('saving-section').innerHTML=shtml;
+
+  // holiday card
+  const remaining=HOLIDAYS.filter(h=>h.date<=ne&&h.date>=START);
+  const eliminated=HOLIDAYS.filter(h=>h.date>ne&&h.date<=ORIG_END);
+  let hhtml='<div style="margin-bottom:8px;font-size:12px;color:var(--color-text-secondary)">原始期間內假日（壓縮前）</div>';
+  HOLIDAYS.forEach(h=>{
+    const gone=eliminated.includes(h);
+    const wkNote=h.isWeekend?' <span style="font-size:10px;color:var(--color-text-tertiary)">（週末）</span>':'';
+    if(gone){
+      hhtml+=`<span class="hday-pill" style="background:#EAF3DE;color:#3B6D11;text-decoration:none"><i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i><span style="text-decoration:line-through;opacity:.7">${h.name}</span>${wkNote}</span>`;
+    } else {
+      hhtml+=`<span class="hday-pill hday-remain"><i class="ti ti-calendar" style="font-size:13px" aria-hidden="true"></i>${h.name}${wkNote}</span>`;
+    }
+  });
+  hhtml+='<div style="margin-top:12px;margin-bottom:6px;font-size:12px;color:var(--color-text-secondary)">壓縮後仍在期間內</div>';
+  if(remaining.length===0){
+    hhtml+='<span style="font-size:12.5px;color:var(--color-text-tertiary)">無（全部假日已在新完工日之後）</span>';
+  } else {
+    remaining.forEach(h=>{
+      const wkNote=h.isWeekend?' <span style="font-size:10px">（週末，不額外增加間接成本）</span>':'';
+      hhtml+=`<span class="hday-pill hday-remain"><i class="ti ti-calendar" style="font-size:13px" aria-hidden="true"></i>${h.name}${wkNote}</span>`;
+    });
+  }
+  if(eliminated.length>0){
+    hhtml+='<div style="margin-top:12px;margin-bottom:6px;font-size:12px;color:var(--color-text-secondary)">壓縮後消除的假日</div>';
+    eliminated.forEach(h=>{
+      const wkNote=h.isWeekend?' <span style="font-size:10px">（週末，原本已含在週末計算中）</span>':' <span style="font-size:10px;color:#3B6D11">（平日，額外節省 NT$150,000）</span>';
+      hhtml+=`<span class="hday-pill" style="background:#EAF3DE;color:#27500A"><i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i>${h.name}${wkNote}</span>`;
+    });
+  }
+  document.getElementById('holiday-section').innerHTML=hhtml;
+
+  // net
+  const isPos=net>=0;
+  document.getElementById('net-section').innerHTML=`<div class="net-highlight" style="background:${isPos?'#EAF3DE':'#FCEBEB'};border:1.5px solid ${isPos?(reduce===bestReduce?'#639922':'#C0DD97'):'#F09595'}">
+    <div style="font-size:13.5px;font-weight:500;color:${isPos?'#27500A':'#791F1F'}">淨節省（間接節省 − 趕工支出）${reduce===bestReduce?' ★ 最佳點':''}</div>
+    <div style="font-size:22px;font-weight:500;color:${isPos?'#3B6D11':'#A32D2D'}">${isPos?'':'-'}${fmtNT(net)}</div>
+  </div>`;
+}
+
+document.getElementById('slider').addEventListener('input',render);
+render();
+</script>
